@@ -37,8 +37,9 @@ byte colPins[numCols]= {8,7,6,5}; //Columns 0 to 3
 
 int i1,i2,i3,i4;
 char c1,c2,c3,c4;
-char keypressed, keypressedx;
-char password = 'ABC123456789';
+char keypressed;
+char password[13] = "ABC123456789"; // Twelve-digit password to stop the alarm
+char enteredPassword[13]; // To store entered password
 
 int A_hour=NULL;
 int A_minute=NULL;
@@ -67,22 +68,41 @@ void loop() {
   lcd.clear(); 
   myRTC.updateTime();
 
-  
   if(myRTC.hours==A_hour && myRTC.minutes==A_minute && AlarmIsActive==1 && myRTC.seconds >= 0 && myRTC.seconds <= 2){
-    while(keypressedx != password){
-    tone(buzzer, 1000); 
-    delay(100);
-    tone(buzzer, 2000);
-    delay(100);
-    lcd.clear();
-    lcd.print("Get up !!!"); 
-    keypressedx = myKeypad.getKey();
-    Serial.print(keypressedx);
-    lcd.setCursor(7, 1);
-    lcd.print(keypressedx);
+    lcd.print("Enter password:");
+    bool passwordCorrect = false;
+    while (!passwordCorrect) {
+      lcd.clear();
+      lcd.print("Enter password:");
+      tone(buzzer, 1000); 
+      delay(100);
+      tone(buzzer, 2000);
+      delay(100);
+      int passwordIndex = 0;
+      while(passwordIndex < 12){
+        char key = myKeypad.getKey();
+        if(key){
+          enteredPassword[passwordIndex++] = key;
+          lcd.setCursor(0, 7);
+          lcd.print(key);
+        }
+      }
+      enteredPassword[12] = '\0'; // Null-terminate the entered password array
+      if(strcmp(enteredPassword, password) == 0){
+        passwordCorrect = true;
+      } else {
+        lcd.clear();
+        lcd.print("Wrong password");
+        delay(1000);
+        lcd.clear();
+      }
     }
+    noTone(buzzer);
+    lcd.clear();
+    lcd.print("Alarm stopped");
+    AlarmIsActive = 0;
   }
-  keypressedx = NO_KEY;
+  enteredPassword[12] = NULL;
   noTone(buzzer);
   lcd.setCursor(0,0);
   lcd.print(myRTC.dayofmonth);
